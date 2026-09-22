@@ -1,341 +1,207 @@
-
 import streamlit as st
 import pandas as pd
 import uuid
 from datetime import datetime
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
 
-
-# ============================================================
+# --------------------------------------------------
 # PAGE CONFIGURATION
-# ============================================================
+# --------------------------------------------------
 
 st.set_page_config(
-    page_title="LostLink | University Lost & Found",
+    page_title="LostLink - University Lost & Found",
     page_icon="🔎",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-
-# ============================================================
-# CUSTOM CSS
-# ============================================================
-
-st.markdown(
-    """
-    <style>
-
-    .main-title {
-        font-size: 40px;
-        font-weight: 700;
-        margin-bottom: 0px;
-    }
-
-    .subtitle {
-        font-size: 17px;
-        color: #6b7280;
-        margin-bottom: 25px;
-    }
-
-    .section-title {
-        font-size: 25px;
-        font-weight: 650;
-    }
-
-    .info-card {
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        background-color: #f8fafc;
-        margin-bottom: 15px;
-    }
-
-    .match-card {
-        padding: 18px;
-        border-radius: 12px;
-        border: 1px solid #dbeafe;
-        background-color: #eff6ff;
-        margin-bottom: 12px;
-    }
-
-    .footer {
-        text-align: center;
-        color: #6b7280;
-        padding: 20px;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# NLP MODEL
-# ============================================================
-
-@st.cache_resource
-def load_nlp_model():
-    """
-    Loads the Sentence Transformer model.
-
-    The model converts item descriptions into numerical
-    embeddings that can be compared semantically.
-    """
-
-    return SentenceTransformer("all-MiniLM-L6-v2")
-
-
-# Load the NLP model
-nlp_model = load_nlp_model()
-
-
-# ============================================================
+# --------------------------------------------------
 # SESSION STATE
-# ============================================================
+# --------------------------------------------------
 
 if "items" not in st.session_state:
-
     st.session_state.items = [
-
         {
-            "id": "LL-1001",
+            "id": "L001",
             "type": "Lost",
-            "name": "Black Laptop",
-            "category": "Electronics",
-            "description": (
-                "I lost my black Lenovo laptop with a small "
-                "sticker on the back. I may have left it "
-                "near the university library."
-            ),
-            "location": "University Library",
-            "date": "September 18, 2026",
-            "owner": "Juan Dela Cruz",
-            "contact": "juan@university.edu",
-            "status": "Pending",
-            "image": None,
-            "claimed_by": None
+            "item_name": "Black Wallet",
+            "description": "Black leather wallet with school ID and cards",
+            "category": "Personal Items",
+            "location": "Library",
+            "date": "September 20, 2026",
+            "status": "Lost",
+            "reported_by": "Juan Dela Cruz",
+            "contact": "juan@email.com"
         },
-
         {
-            "id": "LL-1002",
+            "id": "F001",
             "type": "Found",
-            "name": "Lenovo Notebook Computer",
-            "category": "Electronics",
-            "description": (
-                "A dark colored Lenovo notebook computer was "
-                "found beside the campus library. It has a "
-                "small sticker on its back."
-            ),
-            "location": "University Library",
-            "date": "September 19, 2026",
-            "owner": "Maria Santos",
-            "contact": "maria@university.edu",
+            "item_name": "Black Wallet",
+            "description": "Black wallet found near the library entrance",
+            "category": "Personal Items",
+            "location": "Library",
+            "date": "September 20, 2026",
             "status": "Found",
-            "image": None,
-            "claimed_by": None
+            "reported_by": "Maria Santos",
+            "contact": "maria@email.com"
         },
-
         {
-            "id": "LL-1003",
+            "id": "L002",
             "type": "Lost",
-            "name": "Black Wallet",
-            "category": "Wallet",
-            "description": (
-                "Black leather wallet containing my student "
-                "ID and several cards. I last remember having "
-                "it at the student center."
-            ),
-            "location": "Student Center",
-            "date": "September 20, 2026",
-            "owner": "Alex Reyes",
-            "contact": "alex@university.edu",
-            "status": "Pending",
-            "image": None,
-            "claimed_by": None
-        },
-
-        {
-            "id": "LL-1004",
-            "type": "Found",
-            "name": "Leather Wallet",
-            "category": "Wallet",
-            "description": (
-                "A black leather wallet was found at the "
-                "student center. It contains several cards "
-                "and a university identification card."
-            ),
-            "location": "Student Center",
-            "date": "September 20, 2026",
-            "owner": "Mark Garcia",
-            "contact": "mark@university.edu",
-            "status": "Found",
-            "image": None,
-            "claimed_by": None
-        },
-
-        {
-            "id": "LL-1005",
-            "type": "Found",
-            "name": "Blue Umbrella",
-            "category": "Personal Item",
-            "description": (
-                "A blue foldable umbrella was found near "
-                "the university cafeteria."
-            ),
+            "item_name": "Blue Umbrella",
+            "description": "Blue folding umbrella with black handle",
+            "category": "Accessories",
             "location": "Cafeteria",
+            "date": "September 19, 2026",
+            "status": "Lost",
+            "reported_by": "Pedro Reyes",
+            "contact": "pedro@email.com"
+        },
+        {
+            "id": "F002",
+            "type": "Found",
+            "item_name": "Student ID",
+            "description": "University student identification card",
+            "category": "Documents",
+            "location": "Computer Laboratory",
             "date": "September 21, 2026",
-            "owner": "Student Volunteer",
-            "contact": "volunteer@university.edu",
             "status": "Found",
-            "image": None,
-            "claimed_by": None
+            "reported_by": "Anna Garcia",
+            "contact": "anna@email.com"
         }
     ]
-
 
 if "claims" not in st.session_state:
     st.session_state.claims = []
 
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = True
 
 if "current_user" not in st.session_state:
     st.session_state.current_user = "Student User"
 
 
-if "current_email" not in st.session_state:
-    st.session_state.current_email = "student@university.edu"
-
-
-# ============================================================
+# --------------------------------------------------
 # HELPER FUNCTIONS
-# ============================================================
+# --------------------------------------------------
 
-def generate_id():
+def generate_id(prefix):
+    """Generate a simple unique ID."""
+    return prefix + str(uuid.uuid4())[:6].upper()
+
+
+def clean_words(text):
     """
-    Generates a unique LostLink report ID.
+    Convert text into simple words for keyword matching.
+    No NLP library is required.
     """
+    if not text:
+        return set()
 
-    return "LL-" + str(uuid.uuid4())[:6].upper()
+    punctuation = ",.!?;:()[]{}\"'/-_"
+
+    text = text.lower()
+
+    for char in punctuation:
+        text = text.replace(char, " ")
+
+    return set(text.split())
 
 
-def create_item_text(item):
+def calculate_match_score(lost_item, found_item):
     """
-    Combines important item information into one text.
+    Calculate a simple matching score using:
+    - Item name
+    - Description keywords
+    - Category
+    - Location
 
-    This text will be converted into a semantic embedding
-    by the Sentence Transformer model.
-    """
-
-    return (
-        f"Item name: {item['name']}. "
-        f"Category: {item['category']}. "
-        f"Description: {item['description']}. "
-        f"Location: {item['location']}."
-    )
-
-
-def semantic_similarity(item1, item2):
-    """
-    Calculates semantic similarity between two items.
-
-    Returns a value between 0 and 100.
-    """
-
-    text1 = create_item_text(item1)
-    text2 = create_item_text(item2)
-
-    embeddings = nlp_model.encode(
-        [text1, text2],
-        convert_to_numpy=True
-    )
-
-    similarity = cosine_similarity(
-        [embeddings[0]],
-        [embeddings[1]]
-    )[0][0]
-
-    # Prevent unusual negative values
-    similarity = max(0, similarity)
-
-    return round(similarity * 100, 2)
-
-
-def calculate_match_score(item1, item2):
-    """
-    Calculates a combined match score using:
-
-    1. NLP semantic similarity
-    2. Category similarity
-    3. Location similarity
-
-    NLP receives the largest weight.
+    This is NOT NLP.
     """
 
-    semantic_score = semantic_similarity(
-        item1,
-        item2
-    )
+    score = 0
 
-    # Category score
-    if item1["category"] == item2["category"]:
-        category_score = 100
-    else:
-        category_score = 0
+    # -----------------------------
+    # ITEM NAME MATCH
+    # -----------------------------
 
-    # Location score
-    if item1["location"] == item2["location"]:
-        location_score = 100
-    else:
-        location_score = 0
+    lost_name = clean_words(lost_item["item_name"])
+    found_name = clean_words(found_item["item_name"])
 
-    # Weighted score
-    final_score = (
-        semantic_score * 0.70
-        + category_score * 0.15
-        + location_score * 0.15
-    )
+    if lost_name and found_name:
+        name_matches = lost_name.intersection(found_name)
 
-    return round(final_score, 2)
+        if name_matches:
+            score += min(len(name_matches) * 20, 40)
+
+    # -----------------------------
+    # DESCRIPTION MATCH
+    # -----------------------------
+
+    lost_description = clean_words(lost_item["description"])
+    found_description = clean_words(found_item["description"])
+
+    common_words = lost_description.intersection(found_description)
+
+    # Ignore very common words
+    ignored_words = {
+        "the",
+        "and",
+        "with",
+        "for",
+        "near",
+        "found",
+        "item",
+        "this",
+        "that",
+        "has",
+        "was",
+        "is"
+    }
+
+    meaningful_words = common_words - ignored_words
+
+    if meaningful_words:
+        score += min(len(meaningful_words) * 5, 25)
+
+    # -----------------------------
+    # CATEGORY MATCH
+    # -----------------------------
+
+    if lost_item["category"] == found_item["category"]:
+        score += 20
+
+    # -----------------------------
+    # LOCATION MATCH
+    # -----------------------------
+
+    if lost_item["location"] == found_item["location"]:
+        score += 15
+
+    return min(score, 100)
 
 
-def find_semantic_matches(item, threshold=45):
+def find_matches(lost_item):
     """
-    Finds possible matching reports.
-
-    Lost items are compared only with Found items.
-    Found items are compared only with Lost items.
+    Find found items that may match the selected lost item.
     """
 
     matches = []
 
-    for existing in st.session_state.items:
+    for item in st.session_state.items:
 
-        # Don't compare an item with itself
-        if existing["id"] == item["id"]:
+        if item["type"] != "Found":
             continue
 
-        # Lost should match Found
-        # Found should match Lost
-        if existing["type"] == item["type"]:
+        if item["status"] != "Found":
             continue
 
-        score = calculate_match_score(
-            item,
-            existing
-        )
+        score = calculate_match_score(lost_item, item)
 
-        if score >= threshold:
+        if score >= 20:
+            matches.append({
+                "item": item,
+                "score": score
+            })
 
-            matches.append(
-                {
-                    "item": existing,
-                    "score": score
-                }
-            )
-
-    # Highest score first
     matches.sort(
         key=lambda x: x["score"],
         reverse=True
@@ -344,365 +210,172 @@ def find_semantic_matches(item, threshold=45):
     return matches
 
 
-def match_description(score):
-    """
-    Returns a human-readable description
-    for the similarity score.
-    """
+def display_item_card(item, show_score=None):
 
-    if score >= 80:
-        return "Very Strong Possible Match"
+    with st.container(border=True):
 
-    elif score >= 65:
-        return "Strong Possible Match"
+        col1, col2 = st.columns([3, 1])
 
-    elif score >= 50:
-        return "Possible Match"
+        with col1:
+            st.subheader(item["item_name"])
 
-    else:
-        return "Weak Possible Match"
-
-
-def show_match_results(matches):
-
-    if not matches:
-
-        st.info(
-            "🤖 No possible matching reports were found."
-        )
-
-        return
-
-    st.subheader(
-        "🤖 NLP-Based Possible Matches"
-    )
-
-    st.write(
-        "The system compared the item description with "
-        "other reports using semantic similarity."
-    )
-
-    for match in matches[:5]:
-
-        existing = match["item"]
-        score = match["score"]
-
-        with st.container(border=True):
-
-            col1, col2 = st.columns(
-                [1, 3]
+            st.write(
+                f"**Description:** {item['description']}"
             )
 
-            with col1:
+            st.write(
+                f"**Category:** {item['category']}"
+            )
 
-                if existing["image"] is not None:
+            st.write(
+                f"**Location:** {item['location']}"
+            )
 
-                    st.image(
-                        existing["image"],
-                        use_container_width=True
-                    )
+            st.write(
+                f"**Date:** {item['date']}"
+            )
 
-                else:
+            st.write(
+                f"**Reported by:** {item['reported_by']}"
+            )
 
-                    st.markdown(
-                        "### 📦"
-                    )
+        with col2:
 
-            with col2:
+            if item["type"] == "Lost":
+                st.error("🔴 LOST")
+            else:
+                st.success("🟢 FOUND")
 
-                st.markdown(
-                    f"### {existing['name']}"
-                )
-
-                st.write(
-                    existing["description"]
-                )
-
-                st.write(
-                    f"📍 **Location:** {existing['location']}"
-                )
-
-                st.write(
-                    f"🏷️ **Category:** {existing['category']}"
-                )
-
-                st.write(
-                    f"📅 **Date:** {existing['date']}"
-                )
-
-                if score >= 80:
-
-                    st.success(
-                        f"🟢 Match Score: {score}% — "
-                        f"{match_description(score)}"
-                    )
-
-                elif score >= 65:
-
-                    st.warning(
-                        f"🟡 Match Score: {score}% — "
-                        f"{match_description(score)}"
-                    )
-
-                else:
-
-                    st.info(
-                        f"🔵 Match Score: {score}% — "
-                        f"{match_description(score)}"
-                    )
-
-                st.caption(
-                    f"Report ID: {existing['id']}"
+            if show_score is not None:
+                st.metric(
+                    "Match Score",
+                    f"{show_score}%"
                 )
 
 
-# ============================================================
+# --------------------------------------------------
 # SIDEBAR
-# ============================================================
+# --------------------------------------------------
 
-with st.sidebar:
+st.sidebar.title("🔎 LostLink")
 
-    st.markdown("## 🔎 LostLink")
+st.sidebar.write(
+    "University Lost & Found System"
+)
 
-    st.caption(
-        "University Lost & Found System"
-    )
+st.sidebar.divider()
 
-    st.divider()
+menu = st.sidebar.radio(
+    "Navigation",
+    [
+        "🏠 Dashboard",
+        "🔍 Search Items",
+        "📢 Report Lost Item",
+        "📦 Report Found Item",
+        "📋 All Reports",
+        "🤝 Claims",
+        "👤 Profile",
+        "⚙️ Admin Dashboard"
+    ]
+)
 
-    menu = st.radio(
-        "Navigation",
-        [
-            "🏠 Dashboard",
-            "🔎 Search Items",
-            "📌 Report Lost Item",
-            "📦 Report Found Item",
-            "📋 All Reports",
-            "🤖 Find Possible Matches",
-            "📨 My Claims",
-            "👤 My Profile",
-            "🛡️ Admin Dashboard"
-        ]
-    )
+st.sidebar.divider()
 
-    st.divider()
-
-    st.markdown("### 👤 Current User")
-
-    st.write(
-        st.session_state.current_user
-    )
-
-    st.caption(
-        st.session_state.current_email
-    )
-
-    st.divider()
-
-    st.info(
-        "LostLink uses NLP-based semantic matching "
-        "to identify possible relationships between "
-        "lost and found item descriptions."
-    )
+st.sidebar.write(
+    f"Logged in as: **{st.session_state.current_user}**"
+)
 
 
-# ============================================================
+# ==================================================
 # DASHBOARD
-# ============================================================
+# ==================================================
 
 if menu == "🏠 Dashboard":
 
-    st.markdown(
-        '<div class="main-title">🔎 LostLink</div>',
-        unsafe_allow_html=True
+    st.title("🏠 LostLink Dashboard")
+
+    st.write(
+        "A university system for reporting, searching, and "
+        "matching lost and found items."
     )
 
-    st.markdown(
-        '<div class="subtitle">'
-        'University Lost & Found System'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    st.divider()
 
-    st.info(
-        "Lost something on campus? Report it on LostLink. "
-        "Found an item? Help return it to its owner."
-    )
+    lost_items = [
+        item for item in st.session_state.items
+        if item["type"] == "Lost"
+    ]
 
-    # --------------------------------------------------------
-    # STATISTICS
-    # --------------------------------------------------------
+    found_items = [
+        item for item in st.session_state.items
+        if item["type"] == "Found"
+    ]
 
-    total_reports = len(
-        st.session_state.items
-    )
-
-    total_lost = len(
-        [
-            item for item in st.session_state.items
-            if item["type"] == "Lost"
-        ]
-    )
-
-    total_found = len(
-        [
-            item for item in st.session_state.items
-            if item["type"] == "Found"
-        ]
-    )
-
-    total_claimed = len(
-        [
-            item for item in st.session_state.items
-            if item["status"] == "Claimed"
-        ]
-    )
+    resolved_items = [
+        item for item in st.session_state.items
+        if item["status"] == "Claimed"
+    ]
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(
-            "Total Reports",
-            total_reports
+            "Lost Items",
+            len(lost_items)
         )
 
     with col2:
         st.metric(
-            "Lost Items",
-            total_lost
+            "Found Items",
+            len(found_items)
         )
 
     with col3:
         st.metric(
-            "Found Items",
-            total_found
+            "Claims",
+            len(st.session_state.claims)
         )
 
     with col4:
         st.metric(
-            "Claimed Items",
-            total_claimed
+            "Resolved",
+            len(resolved_items)
         )
 
     st.divider()
 
-    # --------------------------------------------------------
-    # HOW IT WORKS
-    # --------------------------------------------------------
-
-    st.subheader(
-        "🤖 How LostLink Works"
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        st.markdown(
-            "### 1️⃣ Report"
-        )
-
-        st.write(
-            "Students report a lost or found item "
-            "with its description, category, and location."
-        )
-
-    with col2:
-
-        st.markdown(
-            "### 2️⃣ Analyze"
-        )
-
-        st.write(
-            "The NLP model analyzes the meaning of "
-            "the item descriptions."
-        )
-
-    with col3:
-
-        st.markdown(
-            "### 3️⃣ Match"
-        )
-
-        st.write(
-            "The system displays possible matching "
-            "lost and found reports."
-        )
-
-    st.divider()
-
-    # --------------------------------------------------------
-    # RECENT REPORTS
-    # --------------------------------------------------------
-
-    st.subheader(
-        "🕒 Recent Reports"
-    )
+    st.subheader("📌 Recent Reports")
 
     recent_items = st.session_state.items[-5:]
 
     for item in reversed(recent_items):
-
-        with st.container(border=True):
-
-            col1, col2, col3 = st.columns(
-                [1, 4, 1]
-            )
-
-            with col1:
-
-                if item["type"] == "Lost":
-                    st.error("LOST")
-
-                else:
-                    st.success("FOUND")
-
-            with col2:
-
-                st.write(
-                    f"### {item['name']}"
-                )
-
-                st.caption(
-                    f"{item['category']} • "
-                    f"{item['location']}"
-                )
-
-            with col3:
-
-                st.caption(
-                    item["status"]
-                )
+        display_item_card(item)
 
 
-# ============================================================
+# ==================================================
 # SEARCH ITEMS
-# ============================================================
+# ==================================================
 
-elif menu == "🔎 Search Items":
+elif menu == "🔍 Search Items":
 
-    st.title(
-        "🔎 Search Lost & Found Items"
-    )
+    st.title("🔍 Search Lost & Found Items")
 
     st.write(
-        "Search reported items using keywords, "
-        "category, location, or report type."
+        "Search for items using keywords, category, location, "
+        "or item status."
     )
 
     col1, col2 = st.columns(2)
 
     with col1:
-
-        keyword = st.text_input(
-            "🔍 Search Keyword",
-            placeholder="Example: laptop, wallet, phone"
+        search_text = st.text_input(
+            "Search item",
+            placeholder="Example: black wallet"
         )
 
     with col2:
-
-        item_type = st.selectbox(
-            "Report Type",
+        search_type = st.selectbox(
+            "Item Type",
             [
                 "All",
                 "Lost",
@@ -710,39 +383,34 @@ elif menu == "🔎 Search Items":
             ]
         )
 
-    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
 
-    with col1:
-
-        category = st.selectbox(
+    with col3:
+        category_filter = st.selectbox(
             "Category",
             [
                 "All",
                 "Electronics",
+                "Personal Items",
                 "Documents",
-                "Wallet",
-                "Personal Item",
+                "Accessories",
                 "Clothing",
-                "School Supplies",
-                "Keys",
                 "Others"
             ]
         )
 
-    with col2:
-
-        location = st.selectbox(
+    with col4:
+        location_filter = st.selectbox(
             "Location",
             [
                 "All",
-                "Main Building",
-                "University Library",
-                "Student Center",
+                "Library",
                 "Cafeteria",
+                "Computer Laboratory",
                 "Gymnasium",
-                "Laboratory",
-                "Parking Area",
-                "Other"
+                "Classroom",
+                "Student Center",
+                "Others"
             ]
         )
 
@@ -752,508 +420,294 @@ elif menu == "🔎 Search Items":
 
     for item in st.session_state.items:
 
-        match = True
+        # Type filter
+        if search_type != "All":
+            if item["type"] != search_type:
+                continue
 
-        if keyword:
+        # Category filter
+        if category_filter != "All":
+            if item["category"] != category_filter:
+                continue
 
-            search_text = (
-                item["name"]
+        # Location filter
+        if location_filter != "All":
+            if item["location"] != location_filter:
+                continue
+
+        # Keyword search
+        if search_text:
+
+            search_words = clean_words(search_text)
+
+            item_text = (
+                item["item_name"]
                 + " "
                 + item["description"]
-            ).lower()
-
-            if keyword.lower() not in search_text:
-
-                match = False
-
-        if item_type != "All":
-
-            if item["type"] != item_type:
-                match = False
-
-        if category != "All":
-
-            if item["category"] != category:
-                match = False
-
-        if location != "All":
-
-            if item["location"] != location:
-                match = False
-
-        if match:
-
-            results.append(item)
-
-    st.subheader(
-        f"Search Results: {len(results)}"
-    )
-
-    if not results:
-
-        st.warning(
-            "No matching reports were found."
-        )
-
-    for item in results:
-
-        with st.container(border=True):
-
-            col1, col2 = st.columns(
-                [1, 4]
             )
 
-            with col1:
+            item_words = clean_words(item_text)
 
-                if item["image"] is not None:
+            if not search_words.intersection(item_words):
+                continue
 
-                    st.image(
-                        item["image"],
-                        use_container_width=True
-                    )
-
-                else:
-
-                    st.markdown(
-                        "### 📦"
-                    )
-
-            with col2:
-
-                if item["type"] == "Lost":
-                    st.error("LOST ITEM")
-                else:
-                    st.success("FOUND ITEM")
-
-                st.subheader(
-                    item["name"]
-                )
-
-                st.write(
-                    item["description"]
-                )
-
-                st.caption(
-                    f"📍 {item['location']} | "
-                    f"🏷️ {item['category']} | "
-                    f"📅 {item['date']}"
-                )
-
-                st.caption(
-                    f"Report ID: {item['id']}"
-                )
-
-                if (
-                    item["type"] == "Found"
-                    and item["status"] != "Claimed"
-                ):
-
-                    if st.button(
-                        "📨 Claim This Item",
-                        key="claim_search_" + item["id"]
-                    ):
-
-                        new_claim = {
-
-                            "claim_id": generate_id(),
-
-                            "item_id": item["id"],
-
-                            "claimant":
-                                st.session_state.current_user,
-
-                            "date":
-                                datetime.now().strftime(
-                                    "%B %d, %Y %I:%M %p"
-                                ),
-
-                            "status": "Pending"
-                        }
-
-                        st.session_state.claims.append(
-                            new_claim
-                        )
-
-                        st.success(
-                            "Claim request submitted!"
-                        )
-
-
-# ============================================================
-# REPORT LOST ITEM
-# ============================================================
-
-elif menu == "📌 Report Lost Item":
-
-    st.title(
-        "📌 Report a Lost Item"
-    )
+        results.append(item)
 
     st.write(
-        "Provide as much accurate information as possible. "
-        "The NLP matching system will compare your description "
-        "with found item reports."
+        f"**{len(results)} item(s) found.**"
     )
 
-    with st.form(
-        "lost_item_form",
-        clear_on_submit=True
-    ):
+    if results:
 
-        name = st.text_input(
-            "Item Name *",
-            placeholder="Example: Black Lenovo Laptop"
+        for item in results:
+            display_item_card(item)
+
+    else:
+
+        st.info(
+            "No matching items were found."
         )
 
-        category = st.selectbox(
-            "Category *",
-            [
-                "Electronics",
-                "Documents",
-                "Wallet",
-                "Personal Item",
-                "Clothing",
-                "School Supplies",
-                "Keys",
-                "Others"
-            ]
+
+# ==================================================
+# REPORT LOST ITEM
+# ==================================================
+
+elif menu == "📢 Report Lost Item":
+
+    st.title("📢 Report Lost Item")
+
+    st.write(
+        "Provide information about the item you lost."
+    )
+
+    with st.form("lost_item_form"):
+
+        item_name = st.text_input(
+            "Item Name *",
+            placeholder="Example: Black Wallet"
         )
 
         description = st.text_area(
-            "Detailed Description *",
+            "Description *",
             placeholder=(
                 "Describe the item, color, brand, "
-                "identifying marks, and other details."
-            ),
-            height=150
+                "identifying marks, etc."
+            )
         )
 
-        location = st.selectbox(
-            "Where did you lose it? *",
-            [
-                "Main Building",
-                "University Library",
-                "Student Center",
-                "Cafeteria",
-                "Gymnasium",
-                "Laboratory",
-                "Parking Area",
-                "Other"
-            ]
-        )
+        col1, col2 = st.columns(2)
 
-        date = st.date_input(
+        with col1:
+
+            category = st.selectbox(
+                "Category",
+                [
+                    "Electronics",
+                    "Personal Items",
+                    "Documents",
+                    "Accessories",
+                    "Clothing",
+                    "Others"
+                ]
+            )
+
+        with col2:
+
+            location = st.selectbox(
+                "Last Seen Location",
+                [
+                    "Library",
+                    "Cafeteria",
+                    "Computer Laboratory",
+                    "Gymnasium",
+                    "Classroom",
+                    "Student Center",
+                    "Others"
+                ]
+            )
+
+        date_lost = st.date_input(
             "Date Lost"
         )
 
         contact = st.text_input(
-            "University Email *",
-            value=st.session_state.current_email
+            "Contact Information *",
+            placeholder="Email or phone number"
         )
 
-        image = st.file_uploader(
-            "Upload an Image",
-            type=[
-                "jpg",
-                "jpeg",
-                "png"
-            ]
+        submitted = st.form_submit_button(
+            "Submit Lost Item Report"
         )
 
-        submit = st.form_submit_button(
-            "📌 Submit Lost Item",
-            use_container_width=True
-        )
+        if submitted:
 
-    if submit:
+            if not item_name or not description or not contact:
 
-        if not name:
+                st.error(
+                    "Please complete all required fields."
+                )
 
-            st.error(
-                "Please enter the item name."
-            )
+            else:
 
-        elif not description:
+                new_item = {
+                    "id": generate_id("L"),
+                    "type": "Lost",
+                    "item_name": item_name,
+                    "description": description,
+                    "category": category,
+                    "location": location,
+                    "date": str(date_lost),
+                    "status": "Lost",
+                    "reported_by": st.session_state.current_user,
+                    "contact": contact
+                }
 
-            st.error(
-                "Please provide a detailed description."
-            )
-
-        elif not contact:
-
-            st.error(
-                "Please provide your university email."
-            )
-
-        else:
-
-            new_item = {
-
-                "id": generate_id(),
-
-                "type": "Lost",
-
-                "name": name,
-
-                "category": category,
-
-                "description": description,
-
-                "location": location,
-
-                "date":
-                    date.strftime(
-                        "%B %d, %Y"
-                    ),
-
-                "owner":
-                    st.session_state.current_user,
-
-                "contact": contact,
-
-                "status": "Pending",
-
-                "image": image,
-
-                "claimed_by": None
-            }
-
-            st.session_state.items.append(
-                new_item
-            )
-
-            st.success(
-                "✅ Lost item report submitted successfully!"
-            )
-
-            st.write(
-                f"Your Report ID is **{new_item['id']}**"
-            )
-
-            st.divider()
-
-            # NLP MATCHING
-
-            st.write(
-                "🤖 **Running NLP semantic matching...**"
-            )
-
-            with st.spinner(
-                "Analyzing item description..."
-            ):
-
-                matches = find_semantic_matches(
+                st.session_state.items.append(
                     new_item
                 )
 
-            show_match_results(
-                matches
-            )
+                st.success(
+                    "Lost item report submitted successfully!"
+                )
+
+                st.info(
+                    "You can check the Search Items page "
+                    "for possible found items."
+                )
 
 
-# ============================================================
+# ==================================================
 # REPORT FOUND ITEM
-# ============================================================
+# ==================================================
 
 elif menu == "📦 Report Found Item":
 
-    st.title(
-        "📦 Report a Found Item"
-    )
+    st.title("📦 Report Found Item")
 
     st.write(
-        "Found an item on campus? Report it so the "
-        "possible owner can be identified."
+        "Report an item that you found inside the university."
     )
 
-    with st.form(
-        "found_item_form",
-        clear_on_submit=True
-    ):
+    with st.form("found_item_form"):
 
-        name = st.text_input(
+        item_name = st.text_input(
             "Item Name *",
-            placeholder="Example: Black Laptop"
-        )
-
-        category = st.selectbox(
-            "Category *",
-            [
-                "Electronics",
-                "Documents",
-                "Wallet",
-                "Personal Item",
-                "Clothing",
-                "School Supplies",
-                "Keys",
-                "Others"
-            ]
+            placeholder="Example: Black Wallet"
         )
 
         description = st.text_area(
-            "Detailed Description *",
+            "Description *",
             placeholder=(
                 "Describe the item, color, brand, "
-                "visible markings, and other details."
-            ),
-            height=150
+                "and other identifying details."
+            )
         )
 
-        location = st.selectbox(
-            "Where was it found? *",
-            [
-                "Main Building",
-                "University Library",
-                "Student Center",
-                "Cafeteria",
-                "Gymnasium",
-                "Laboratory",
-                "Parking Area",
-                "Other"
-            ]
-        )
+        col1, col2 = st.columns(2)
 
-        date = st.date_input(
+        with col1:
+
+            category = st.selectbox(
+                "Category",
+                [
+                    "Electronics",
+                    "Personal Items",
+                    "Documents",
+                    "Accessories",
+                    "Clothing",
+                    "Others"
+                ]
+            )
+
+        with col2:
+
+            location = st.selectbox(
+                "Found Location",
+                [
+                    "Library",
+                    "Cafeteria",
+                    "Computer Laboratory",
+                    "Gymnasium",
+                    "Classroom",
+                    "Student Center",
+                    "Others"
+                ]
+            )
+
+        date_found = st.date_input(
             "Date Found"
         )
 
         contact = st.text_input(
-            "University Email *",
-            value=st.session_state.current_email
+            "Your Contact Information *",
+            placeholder="Email or phone number"
         )
 
-        image = st.file_uploader(
-            "Upload an Image",
-            type=[
-                "jpg",
-                "jpeg",
-                "png"
-            ]
+        submitted = st.form_submit_button(
+            "Submit Found Item Report"
         )
 
-        submit = st.form_submit_button(
-            "📦 Submit Found Item",
-            use_container_width=True
-        )
+        if submitted:
 
-    if submit:
+            if not item_name or not description or not contact:
 
-        if not name:
+                st.error(
+                    "Please complete all required fields."
+                )
 
-            st.error(
-                "Please enter the item name."
-            )
+            else:
 
-        elif not description:
+                new_item = {
+                    "id": generate_id("F"),
+                    "type": "Found",
+                    "item_name": item_name,
+                    "description": description,
+                    "category": category,
+                    "location": location,
+                    "date": str(date_found),
+                    "status": "Found",
+                    "reported_by": st.session_state.current_user,
+                    "contact": contact
+                }
 
-            st.error(
-                "Please provide a detailed description."
-            )
-
-        elif not contact:
-
-            st.error(
-                "Please provide your university email."
-            )
-
-        else:
-
-            new_item = {
-
-                "id": generate_id(),
-
-                "type": "Found",
-
-                "name": name,
-
-                "category": category,
-
-                "description": description,
-
-                "location": location,
-
-                "date":
-                    date.strftime(
-                        "%B %d, %Y"
-                    ),
-
-                "owner":
-                    st.session_state.current_user,
-
-                "contact": contact,
-
-                "status": "Found",
-
-                "image": image,
-
-                "claimed_by": None
-            }
-
-            st.session_state.items.append(
-                new_item
-            )
-
-            st.success(
-                "✅ Found item report submitted successfully!"
-            )
-
-            st.write(
-                f"Your Report ID is **{new_item['id']}**"
-            )
-
-            st.divider()
-
-            st.write(
-                "🤖 **Running NLP semantic matching...**"
-            )
-
-            with st.spinner(
-                "Analyzing item description..."
-            ):
-
-                matches = find_semantic_matches(
+                st.session_state.items.append(
                     new_item
                 )
 
-            show_match_results(
-                matches
-            )
+                st.success(
+                    "Found item report submitted successfully!"
+                )
 
 
-# ============================================================
+# ==================================================
 # ALL REPORTS
-# ============================================================
+# ==================================================
 
 elif menu == "📋 All Reports":
 
-    st.title(
-        "📋 All Lost & Found Reports"
-    )
+    st.title("📋 All Lost & Found Reports")
 
     if st.session_state.items:
 
-        report_data = []
-
-        for item in st.session_state.items:
-
-            report_data.append(
-                {
-                    "Report ID": item["id"],
-                    "Type": item["type"],
-                    "Item": item["name"],
-                    "Category": item["category"],
-                    "Location": item["location"],
-                    "Date": item["date"],
-                    "Status": item["status"]
-                }
-            )
-
         df = pd.DataFrame(
-            report_data
+            st.session_state.items
         )
 
+        display_df = df[
+            [
+                "id",
+                "type",
+                "item_name",
+                "category",
+                "location",
+                "date",
+                "status"
+            ]
+        ]
+
         st.dataframe(
-            df,
+            display_df,
             use_container_width=True,
             hide_index=True
         )
@@ -1265,271 +719,192 @@ elif menu == "📋 All Reports":
         )
 
 
-# ============================================================
-# FIND POSSIBLE MATCHES
-# ============================================================
+# ==================================================
+# CLAIMS
+# ==================================================
 
-elif menu == "🤖 Find Possible Matches":
+elif menu == "🤝 Claims":
 
-    st.title(
-        "🤖 NLP-Based Semantic Matching"
-    )
+    st.title("🤝 Item Claims")
 
     st.write(
-        "Select a lost or found report to find "
-        "possible matching reports."
+        "Select a found item that you believe belongs to you."
     )
 
-    if not st.session_state.items:
+    found_items = [
+        item for item in st.session_state.items
+        if item["type"] == "Found"
+        and item["status"] == "Found"
+    ]
 
-        st.warning(
-            "No reports available."
+    if not found_items:
+
+        st.info(
+            "There are currently no found items available for claims."
         )
 
     else:
 
-        item_options = {}
-
-        for item in st.session_state.items:
-
-            label = (
-                f"{item['id']} | "
-                f"{item['type']} | "
-                f"{item['name']}"
-            )
-
-            item_options[label] = item
-
-        selected_label = st.selectbox(
-            "Select a report",
-            list(item_options.keys())
+        selected_item_id = st.selectbox(
+            "Select Found Item",
+            [
+                item["id"]
+                + " - "
+                + item["item_name"]
+                for item in found_items
+            ]
         )
 
-        selected_item = item_options[
-            selected_label
-        ]
+        selected_id = selected_item_id.split(" - ")[0]
+
+        selected_item = next(
+            item for item in found_items
+            if item["id"] == selected_id
+        )
 
         st.divider()
 
-        st.subheader(
-            "Selected Report"
+        display_item_card(selected_item)
+
+        st.divider()
+
+        st.subheader("Claim Information")
+
+        claim_reason = st.text_area(
+            "Why do you believe this item belongs to you?",
+            placeholder=(
+                "Provide identifying details such as "
+                "color, contents, brand, serial number, "
+                "or other information."
+            )
         )
 
-        with st.container(border=True):
-
-            st.write(
-                f"### {selected_item['name']}"
-            )
-
-            st.write(
-                selected_item["description"]
-            )
-
-            st.caption(
-                f"Type: {selected_item['type']} | "
-                f"Category: {selected_item['category']} | "
-                f"Location: {selected_item['location']}"
-            )
+        contact = st.text_input(
+            "Your Contact Information"
+        )
 
         if st.button(
-            "🤖 Find Semantic Matches",
-            use_container_width=True
+            "Submit Claim",
+            type="primary"
         ):
 
-            with st.spinner(
-                "Comparing item descriptions using NLP..."
-            ):
+            if not claim_reason or not contact:
 
-                matches = find_semantic_matches(
-                    selected_item
+                st.error(
+                    "Please provide the required information."
                 )
 
-            show_match_results(
-                matches
-            )
+            else:
 
+                claim = {
+                    "claim_id": generate_id("C"),
+                    "item_id": selected_item["id"],
+                    "item_name": selected_item["item_name"],
+                    "claimed_by": st.session_state.current_user,
+                    "reason": claim_reason,
+                    "contact": contact,
+                    "status": "Pending",
+                    "date": str(datetime.now().date())
+                }
 
-# ============================================================
-# MY CLAIMS
-# ============================================================
-
-elif menu == "📨 My Claims":
-
-    st.title(
-        "📨 My Claim Requests"
-    )
-
-    user_claims = [
-
-        claim
-
-        for claim in st.session_state.claims
-
-        if claim["claimant"]
-        == st.session_state.current_user
-    ]
-
-    if not user_claims:
-
-        st.info(
-            "You have no claim requests."
-        )
-
-    for claim in user_claims:
-
-        item = next(
-            (
-                x
-                for x in st.session_state.items
-
-                if x["id"]
-                == claim["item_id"]
-            ),
-            None
-        )
-
-        if item:
-
-            with st.container(
-                border=True
-            ):
-
-                st.subheader(
-                    item["name"]
+                st.session_state.claims.append(
+                    claim
                 )
 
-                st.write(
-                    f"Claim ID: {claim['claim_id']}"
+                st.success(
+                    "Your claim has been submitted!"
                 )
 
-                st.write(
-                    f"Report ID: {item['id']}"
-                )
 
-                st.write(
-                    f"Claim Date: {claim['date']}"
-                )
+# ==================================================
+# PROFILE
+# ==================================================
 
-                if claim["status"] == "Pending":
+elif menu == "👤 Profile":
 
-                    st.warning(
-                        "⏳ Claim is pending admin verification."
-                    )
+    st.title("👤 My Profile")
 
-                elif claim["status"] == "Approved":
-
-                    st.success(
-                        "✅ Claim approved."
-                    )
-
-                else:
-
-                    st.error(
-                        "❌ Claim rejected."
-                    )
-
-
-# ============================================================
-# MY PROFILE
-# ============================================================
-
-elif menu == "👤 My Profile":
-
-    st.title(
-        "👤 My Profile"
+    st.subheader(
+        st.session_state.current_user
     )
 
     st.write(
-        "Update your university information."
+        "Student Account"
     )
 
-    name = st.text_input(
-        "Full Name",
-        value=st.session_state.current_user
-    )
+    st.divider()
 
-    email = st.text_input(
-        "University Email",
-        value=st.session_state.current_email
-    )
+    my_reports = [
+        item for item in st.session_state.items
+        if item["reported_by"]
+        == st.session_state.current_user
+    ]
 
-    student_id = st.text_input(
-        "Student ID",
-        value="2026-00001"
-    )
+    my_claims = [
+        claim for claim in st.session_state.claims
+        if claim["claimed_by"]
+        == st.session_state.current_user
+    ]
 
-    course = st.selectbox(
-        "Program",
-        [
-            "BS Information Technology",
-            "BS Computer Science",
-            "BS Information Systems",
-            "Other"
-        ]
-    )
+    col1, col2 = st.columns(2)
 
-    year_level = st.selectbox(
-        "Year Level",
-        [
-            "1st Year",
-            "2nd Year",
-            "3rd Year",
-            "4th Year"
-        ]
-    )
+    with col1:
+        st.metric(
+            "My Reports",
+            len(my_reports)
+        )
 
-    if st.button(
-        "💾 Save Profile",
-        use_container_width=True
-    ):
+    with col2:
+        st.metric(
+            "My Claims",
+            len(my_claims)
+        )
 
-        st.session_state.current_user = name
+    st.divider()
 
-        st.session_state.current_email = email
+    st.subheader("My Reports")
 
-        st.success(
-            "✅ Profile updated successfully."
+    if my_reports:
+
+        for item in my_reports:
+            display_item_card(item)
+
+    else:
+
+        st.info(
+            "You have not submitted any reports yet."
         )
 
 
-# ============================================================
+# ==================================================
 # ADMIN DASHBOARD
-# ============================================================
+# ==================================================
 
-elif menu == "🛡️ Admin Dashboard":
+elif menu == "⚙️ Admin Dashboard":
 
-    st.title(
-        "🛡️ Admin Dashboard"
+    st.title("⚙️ Admin Dashboard")
+
+    st.write(
+        "Manage lost and found reports and claims."
     )
 
-    st.warning(
-        "This is a prototype admin panel. "
-        "Authentication should be added before actual deployment."
-    )
+    st.divider()
 
-    # --------------------------------------------------------
-    # ADMIN STATISTICS
-    # --------------------------------------------------------
+    # Statistics
 
-    total_reports = len(
+    total_items = len(
         st.session_state.items
     )
 
-    pending_reports = len(
-        [
-            item
-            for item in st.session_state.items
-            if item["status"] == "Pending"
-        ]
-    )
+    total_lost = len([
+        x for x in st.session_state.items
+        if x["type"] == "Lost"
+    ])
 
-    found_reports = len(
-        [
-            item
-            for item in st.session_state.items
-            if item["type"] == "Found"
-        ]
-    )
+    total_found = len([
+        x for x in st.session_state.items
+        if x["type"] == "Found"
+    ])
 
     total_claims = len(
         st.session_state.claims
@@ -1538,200 +913,160 @@ elif menu == "🛡️ Admin Dashboard":
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-
         st.metric(
             "Total Reports",
-            total_reports
+            total_items
         )
 
     with col2:
-
         st.metric(
-            "Pending",
-            pending_reports
+            "Lost",
+            total_lost
         )
 
     with col3:
-
         st.metric(
-            "Found Items",
-            found_reports
+            "Found",
+            total_found
         )
 
     with col4:
-
         st.metric(
-            "Claim Requests",
+            "Claims",
             total_claims
         )
 
+    # ----------------------------------------------
+    # ITEM MANAGEMENT
+    # ----------------------------------------------
+
     st.divider()
 
-    # --------------------------------------------------------
-    # MANAGE REPORTS
-    # --------------------------------------------------------
+    st.subheader("📋 Item Management")
 
-    st.subheader(
-        "📋 Manage Reports"
-    )
+    for index, item in enumerate(
+        st.session_state.items
+    ):
 
-    for item in st.session_state.items:
-
-        with st.container(
-            border=True
+        with st.expander(
+            f"{item['id']} - {item['item_name']} ({item['type']})"
         ):
 
-            col1, col2, col3 = st.columns(
-                [4, 2, 1]
+            st.write(
+                f"**Description:** {item['description']}"
             )
 
-            with col1:
+            st.write(
+                f"**Category:** {item['category']}"
+            )
 
-                st.write(
-                    f"### {item['name']}"
-                )
+            st.write(
+                f"**Location:** {item['location']}"
+            )
 
-                st.caption(
-                    f"{item['id']} | "
-                    f"{item['type']} | "
-                    f"{item['location']}"
-                )
+            st.write(
+                f"**Status:** {item['status']}"
+            )
 
-            with col2:
-
-                status_options = [
-                    "Pending",
+            new_status = st.selectbox(
+                "Update Status",
+                [
+                    "Lost",
                     "Found",
-                    "Matched",
                     "Claimed",
-                    "Closed"
-                ]
+                    "Resolved"
+                ],
+                index=[
+                    "Lost",
+                    "Found",
+                    "Claimed",
+                    "Resolved"
+                ].index(item["status"]),
+                key=f"status_{index}"
+            )
 
-                current_index = status_options.index(
-                    item["status"]
+            if st.button(
+                "Update Status",
+                key=f"update_{index}"
+            ):
+
+                st.session_state.items[index][
+                    "status"
+                ] = new_status
+
+                st.success(
+                    "Status updated successfully."
                 )
 
-                new_status = st.selectbox(
-                    "Status",
-                    status_options,
-                    index=current_index,
-                    key="status_" + item["id"]
-                )
+                st.rerun()
 
-            with col3:
-
-                if st.button(
-                    "Update",
-                    key="update_" + item["id"]
-                ):
-
-                    item["status"] = new_status
-
-                    st.success(
-                        "Updated."
-                    )
+    # ----------------------------------------------
+    # CLAIM MANAGEMENT
+    # ----------------------------------------------
 
     st.divider()
 
-    # --------------------------------------------------------
-    # CLAIM REQUESTS
-    # --------------------------------------------------------
-
-    st.subheader(
-        "📨 Claim Requests"
-    )
+    st.subheader("🤝 Claim Management")
 
     if not st.session_state.claims:
 
         st.info(
-            "There are no claim requests."
+            "No claims have been submitted."
         )
 
-    for claim in st.session_state.claims:
+    else:
 
-        item = next(
-            (
-                x
-                for x in st.session_state.items
+        for index, claim in enumerate(
+            st.session_state.claims
+        ):
 
-                if x["id"]
-                == claim["item_id"]
-            ),
-            None
-        )
-
-        if item:
-
-            with st.container(
-                border=True
+            with st.expander(
+                f"{claim['claim_id']} - "
+                f"{claim['item_name']}"
             ):
 
                 st.write(
-                    f"### {item['name']}"
+                    f"**Claimed by:** {claim['claimed_by']}"
                 )
 
                 st.write(
-                    f"Claimant: {claim['claimant']}"
+                    f"**Reason:** {claim['reason']}"
                 )
 
                 st.write(
-                    f"Claim ID: {claim['claim_id']}"
+                    f"**Contact:** {claim['contact']}"
                 )
 
                 st.write(
-                    f"Claim Status: {claim['status']}"
+                    f"**Status:** {claim['status']}"
                 )
 
-                if claim["status"] == "Pending":
+                new_claim_status = st.selectbox(
+                    "Claim Status",
+                    [
+                        "Pending",
+                        "Approved",
+                        "Rejected"
+                    ],
+                    index=[
+                        "Pending",
+                        "Approved",
+                        "Rejected"
+                    ].index(claim["status"]),
+                    key=f"claim_status_{index}"
+                )
 
-                    col1, col2 = st.columns(2)
+                if st.button(
+                    "Update Claim",
+                    key=f"claim_update_{index}"
+                ):
 
-                    with col1:
+                    st.session_state.claims[index][
+                        "status"
+                    ] = new_claim_status
 
-                        if st.button(
-                            "✅ Approve Claim",
-                            key="approve_" + claim["claim_id"]
-                        ):
+                    st.success(
+                        "Claim status updated."
+                    )
 
-                            claim["status"] = "Approved"
-
-                            item["status"] = "Claimed"
-
-                            item["claimed_by"] = (
-                                claim["claimant"]
-                            )
-
-                            st.success(
-                                "Claim approved."
-                            )
-
-                    with col2:
-
-                        if st.button(
-                            "❌ Reject Claim",
-                            key="reject_" + claim["claim_id"]
-                        ):
-
-                            claim["status"] = "Rejected"
-
-                            st.warning(
-                                "Claim rejected."
-                            )
-
-
-# ============================================================
-# FOOTER
-# ============================================================
-
-st.divider()
-
-st.markdown(
-    """
-    <div class="footer">
-        🔎 <b>LostLink</b> — University Lost & Found System
-        <br>
-        NLP-Based Semantic Matching Prototype
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+                    st.rerun()
