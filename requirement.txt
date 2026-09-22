@@ -1,3 +1,8 @@
+streamlit
+pandas
+sentence-transformers
+scikit-learn
+
 # Core frontend framework
 streamlit==1.45.0
 
